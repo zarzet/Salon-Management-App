@@ -71,7 +71,7 @@ public class LoginController implements Initializable {
 
             if (user != null) {
                 // TODO: ganti ke file FXML setelah login, misal dashboard.fxml
-                URL dashboardUrl = new File("src/main/java/view/dashboard.fxml")
+                URL dashboardUrl = new File("src/main/java/View/dashboard.fxml")
                         .toURI().toURL();
                 Parent root = FXMLLoader.load(dashboardUrl);
                 Stage stage = (Stage) btnLogin.getScene().getWindow();
@@ -91,8 +91,7 @@ public class LoginController implements Initializable {
 
     @FXML
     private void onOpenRegister(ActionEvent event) throws IOException {
-        // TODO: ganti ke FXML form register yang kamu punya
-        URL registerUrl = new File("src/main/java/view/RegisterKaryawan.fxml")
+        URL registerUrl = new File("src/main/java/View/Register.fxml")
                 .toURI().toURL();
         Parent root = FXMLLoader.load(registerUrl);
         Stage stage = (Stage) ((javafx.scene.Node) event.getSource())
