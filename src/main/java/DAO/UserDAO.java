@@ -14,22 +14,24 @@ public class UserDAO {
     private static Connection con;
 
     // LOGIN VALIDATION
-    public static User validate(String email, String password) {
+    public static User validate(String email, String password, String role) {
         User u = null;
         try {
             con = getCon();
-            String query = "SELECT idUser, email, password FROM users WHERE email = ? AND password = ?";
-            st = con.prepareStatement(query);
+            String query = "SELECT idUser, email, password, role FROM users WHERE email = ? AND password = ? AND role = ?";
 
+            st = con.prepareStatement(query);
             st.setString(1, email);
             st.setString(2, password);
-
+            st.setString(3, role);
             ResultSet rs = st.executeQuery();
             if (rs.next()) {
+                // sesuaikan dengan constructor User-mu
                 u = new User(
-                    rs.getString("idUser"),   
-                    rs.getString("email"),
-                    rs.getString("password")
+                        rs.getString("idUser"),
+                        rs.getString("email"),
+                        rs.getString("password"),
+                        rs.getString("role")
                 );
             }
 
@@ -40,7 +42,6 @@ public class UserDAO {
         }
         return u;
     }
-
     // SEARCH USER BY ID (STRING)
     public static User searchByUid(String idUser) {
         User u = null;
@@ -56,7 +57,8 @@ public class UserDAO {
                 u = new User(
                     rs.getString("idUser"),
                     rs.getString("email"),
-                    rs.getString("password")
+                    rs.getString("password"),
+                    "user" // default role
                 );
             }
 
@@ -69,23 +71,34 @@ public class UserDAO {
     }
 
     // REGISTER USER
-    public static void registerUser(User u) {
-        try {
-            con = getCon();
-            String query = "INSERT INTO users (idUser, email, password) VALUES (?,?,?)";
+    public static void registerUser(User user) throws SQLException {
 
-            st = con.prepareStatement(query);
+        // 1. Siapkan Query
+        // Kita perlu mengisi kolom 'nama' dan 'status' secara default
+        // karena di form register belum ada input nama.
+        String query = "INSERT INTO users (idUser, email, password, role, status, nama) VALUES (?, ?, ?, ?, ?, ?)";
 
-            st.setString(1, u.getIdUser()); // String now
-            st.setString(2, u.getEmail());
-            st.setString(3, u.getPass());
+        // 2. Tentukan Data Default
+        String defaultStatus = "Aktif";
 
-            st.executeUpdate();
+        // Ambil nama dari email (sebelum @) sebagai nama sementara,
+        // atau set string kosong jika DB mengizinkan.
+        String tempName = user.getEmail().split("@")[0];
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeCon(con);
+        // 3. Eksekusi menggunakan DatabaseManager
+        // Pastikan urutan parameter sesuai dengan tanda tanya (?) di query
+        int result = DatabaseManager.executeUpdate(query,
+                user.getIdUser(),   // 1. idUser (dari UUID di controller)
+                user.getEmail(),    // 2. email
+                user.getPass(), // 3. password
+                user.getRole(),     // 4. role (biasanya "Karyawan")
+                defaultStatus,      // 5. status
+                tempName            // 6. nama (Wajib diisi supaya tidak error SQL)
+        );
+
+        // 4. Cek apakah data benar-benar masuk
+        if (result == 0) {
+            throw new SQLException("Gagal menyimpan data ke database (0 baris terpengaruh).");
         }
     }
 }

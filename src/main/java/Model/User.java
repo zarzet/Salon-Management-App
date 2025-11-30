@@ -21,10 +21,11 @@ public class User {
         this.role = role;
     }
     
-    public User(String idUser, String email, String password) {
+    public User(String idUser, String email, String password, String role) {
         this.setIdUser(idUser);
         this.setEmail(email);
         this.setPass(password);
+        this.setRole(role);
     }
 
     
@@ -50,6 +51,14 @@ public class User {
 
     public void setPass(String password) {
         this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
      
 }

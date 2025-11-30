@@ -1,4 +1,6 @@
+Controller\RegisterController.class
 Model\Jadwal.class
+Controller\AdminDashboardController.class
 DAO\BaseDAO.class
 Model\Pelanggan.class
 Model\Layanan.class

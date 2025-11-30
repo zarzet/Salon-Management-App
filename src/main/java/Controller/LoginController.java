@@ -26,7 +26,7 @@ public class LoginController implements Initializable {
     public static User user;
 
     @FXML
-    private TextField tfUsername;
+    private TextField tfEmail;
 
     @FXML
     private PasswordField tfPassword;
@@ -34,7 +34,7 @@ public class LoginController implements Initializable {
     @FXML
     private ComboBox<String> cbRole;
 
-    // optional, kalau nanti mau dipakai
+
     @FXML
     private Button btnLogin;
 
@@ -52,31 +52,41 @@ public class LoginController implements Initializable {
     @FXML
     private void onLogin(ActionEvent event) {
         try {
-            String username = tfUsername.getText();
+            String email = tfEmail.getText();
             String password = tfPassword.getText();
-            String role     = cbRole.getValue();   // kalau mau dipakai
+            String role = cbRole.getValue();
 
-            if (username == null || username.isEmpty()
-                    || password == null || password.isEmpty()) {
+            if (email == null || email.isEmpty()
+                    || password == null || password.isEmpty()
+                    || role == null || role.isEmpty()) {
                 JOptionPane.showMessageDialog(null,
-                        "Username dan password harus diisi");
+                        "Email, password, dan role harus diisi");
                 return;
             }
 
-            // kalau validate() kamu cuma butuh username + password:
-            user = UserDAO.validate(username, password);
-
-            // kalau ingin ikut cek role:
-            // user = UserDAO.validate(username, password, role);
+            // validate dengan email, password, dan role
+            user = UserDAO.validate(email, password, role);
 
             if (user != null) {
-                // TODO: ganti ke file FXML setelah login, misal dashboard.fxml
-                URL dashboardUrl = new File("src/main/java/View/dashboard.fxml")
-                        .toURI().toURL();
-                Parent root = FXMLLoader.load(dashboardUrl);
+                Parent root;
+
+                // cek role user dari database
+                if ("Admin".equalsIgnoreCase(user.getRole())) {
+                    // masuk ke AdminDashboard.fxml
+                    root = FXMLLoader.load(
+                            getClass().getResource("/View/AdminDashboard.fxml"));
+                } else {
+                    // sementara: role lain masuk ke dashboard biasa
+                    // (sesuaikan kalau nanti punya FXML khusus Kasir/Karyawan)
+                    root = FXMLLoader.load(
+                            getClass().getResource("/View/dashboard.fxml"));
+                }
+
                 Stage stage = (Stage) btnLogin.getScene().getWindow();
                 Scene scene = new Scene(root);
                 stage.setScene(scene);
+                stage.show();
+
             } else {
                 JOptionPane.showMessageDialog(null,
                         "INVALID USERNAME / PASSWORD!!!");
@@ -89,14 +99,15 @@ public class LoginController implements Initializable {
         }
     }
 
+
     @FXML
     private void onOpenRegister(ActionEvent event) throws IOException {
-        URL registerUrl = new File("src/main/java/View/Register.fxml")
-                .toURI().toURL();
-        Parent root = FXMLLoader.load(registerUrl);
+        Parent root = FXMLLoader.load(getClass().getResource("/View/Register.fxml"));
         Stage stage = (Stage) ((javafx.scene.Node) event.getSource())
                 .getScene().getWindow();
         Scene scene = new Scene(root);
         stage.setScene(scene);
+        stage.show();
     }
-}
+
+    }

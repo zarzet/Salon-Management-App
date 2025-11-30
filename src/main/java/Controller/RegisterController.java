@@ -1,13 +1,15 @@
 package Controller;
 
 import DAO.UserDAO;
+import DAO.DatabaseManager; // Pastikan import ini ada!
 import Model.User;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.sql.ResultSet;       // Tambahan
+import java.sql.SQLException;    // Tambahan
 import java.util.ResourceBundle;
-import java.util.UUID;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -24,20 +26,11 @@ import javax.swing.JOptionPane;
 
 public class RegisterController implements Initializable {
 
-    @FXML
-    private TextField tfEmail;
-
-    @FXML
-    private PasswordField tfPassword;
-
-    @FXML
-    private PasswordField tfConfirmPassword;
-
-    @FXML
-    private Button btnRegister;
-
-    @FXML
-    private Hyperlink linkBackToLogin;
+    @FXML private TextField tfEmail;
+    @FXML private PasswordField tfPassword;
+    @FXML private PasswordField tfConfirmPassword;
+    @FXML private Button btnRegister;
+    @FXML private Hyperlink linkBackToLogin;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -51,57 +44,72 @@ public class RegisterController implements Initializable {
             String password = tfPassword.getText();
             String confirmPassword = tfConfirmPassword.getText();
 
-            // Validasi input kosong
-            if (email == null || email.isEmpty() 
-                    || password == null || password.isEmpty() 
-                    || confirmPassword == null || confirmPassword.isEmpty()) {
-                JOptionPane.showMessageDialog(null, 
-                        "Semua field harus diisi!");
+            // --- VALIDASI INPUT ---
+            if (email == null || email.isEmpty() || password == null || password.isEmpty()) {
+                JOptionPane.showMessageDialog(null, "Semua field harus diisi!");
                 return;
             }
-
-            // Validasi email format
             if (!email.contains("@") || !email.contains(".")) {
-                JOptionPane.showMessageDialog(null, 
-                        "Format email tidak valid!");
+                JOptionPane.showMessageDialog(null, "Format email tidak valid!");
                 return;
             }
-
-            // Validasi password match
             if (!password.equals(confirmPassword)) {
-                JOptionPane.showMessageDialog(null, 
-                        "Password dan konfirmasi password tidak cocok!");
+                JOptionPane.showMessageDialog(null, "Password dan konfirmasi tidak cocok!");
                 return;
             }
-
-            // Validasi panjang password
             if (password.length() < 6) {
-                JOptionPane.showMessageDialog(null, 
-                        "Password minimal 6 karakter!");
+                JOptionPane.showMessageDialog(null, "Password minimal 6 karakter!");
                 return;
             }
 
-            // Generate ID unik untuk user
-            String userId = UUID.randomUUID().toString();
+            // --- PERUBAHAN UTAMA DI SINI ---
 
-            // Buat object User baru
-            User newUser = new User(userId, email, password);
+            // Generate ID Berurutan (KRY001, dst)
+            String userId = generateKaryawanId();
 
-            // Simpan ke database
+            // -------------------------------
+
+            // Buat object User baru (Role otomatis 'Karyawan')
+            User newUser = new User(userId, email, password, "Karyawan");
+
+            // Simpan ke database lewat DAO
             UserDAO.registerUser(newUser);
 
-            // Tampilkan pesan sukses
-            JOptionPane.showMessageDialog(null, 
-                    "Registrasi berhasil! Silakan login.");
+            // Tampilkan pesan sukses dengan info ID
+            JOptionPane.showMessageDialog(null,
+                    "Registrasi berhasil!\nID Anda:  \nSilakan login.");
 
             // Kembali ke halaman login
             goToLogin(event);
 
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null, 
-                    "Terjadi kesalahan saat registrasi: " + e.getMessage());
+            JOptionPane.showMessageDialog(null, "Terjadi kesalahan: " + e.getMessage());
         }
+    }
+
+    // --- METHOD GENERATOR ID BARU ---
+    private String generateKaryawanId() {
+        String prefix = "KRY";
+        // Cari ID terakhir KRY...
+        String query = "SELECT idUser FROM users WHERE idUser LIKE 'KRY%' ORDER BY idUser DESC LIMIT 1";
+
+        ResultSet rs = DatabaseManager.executeQuery(query);
+        int nextNumber = 1;
+
+        try {
+            if (rs != null && rs.next()) {
+                String lastId = rs.getString("idUser");
+                if (lastId.length() >= 3) {
+                    String numberPart = lastId.substring(3);
+                    nextNumber = Integer.parseInt(numberPart) + 1;
+                }
+            }
+        } catch (SQLException | NumberFormatException e) {
+            e.printStackTrace();
+        }
+
+        return String.format("%s%03d", prefix, nextNumber);
     }
 
     @FXML
@@ -110,11 +118,16 @@ public class RegisterController implements Initializable {
     }
 
     private void goToLogin(ActionEvent event) throws IOException {
-        URL loginUrl = new File("src/main/java/View/Login.fxml")
-                .toURI().toURL();
+        // Pastikan path ini benar sesuai struktur projectmu
+        // Bisa jadi "/View/Login.fxml" atau "/Login.fxml"
+        URL loginUrl = getClass().getResource("/View/Login.fxml");
+        if (loginUrl == null) {
+            // Fallback manual jika getResource gagal
+            loginUrl = new File("src/main/resources/View/Login.fxml").toURI().toURL();
+        }
+
         Parent root = FXMLLoader.load(loginUrl);
-        Stage stage = (Stage) ((javafx.scene.Node) event.getSource())
-                .getScene().getWindow();
+        Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
         Scene scene = new Scene(root);
         stage.setScene(scene);
     }
